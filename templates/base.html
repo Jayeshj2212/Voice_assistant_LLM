@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}AI Telecaller{% endblock %}</title>
+    <style>
+      :root {
+        --bg: #071c2f;
+        --panel: #0f2740;
+        --card: #ffffff;
+        --muted: #5c7288;
+        --primary: #41c3ff;
+        --primary-strong: #1b8ef2;
+        --accent: #00d09c;
+        --line: #dfeaf8;
+        --warning: #ffb84d;
+        --text: #12263d;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: linear-gradient(135deg, #061a2c, #0d2d48 40%, #123861);
+        color: var(--text);
+      }
+      .container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 22px;
+      }
+      .hero {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 24px;
+        color: white;
+      }
+      .hero h1 { margin: 0 0 10px; font-size: 2.3rem; }
+      .hero p { margin: 0; color: rgba(255,255,255,0.8); }
+      .card {
+        background: var(--card);
+        border-radius: 18px;
+        padding: 24px;
+        margin-top: 16px;
+        box-shadow: 0 16px 40px rgba(3, 20, 33, 0.18);
+      }
+      h1, h2, h3 { margin-top: 0; }
+      .btn {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+        color: white;
+        padding: 12px 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        margin: 8px 8px 8px 0;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+      }
+      .btn.secondary {
+        background: #eef6ff;
+        color: var(--text);
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+      .metric-box {
+        background: #f3f8ff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+      }
+      .metric-box strong { font-size: 1.5rem; display: block; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .lang-box, .lead-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px;
+        background: #f8fbff;
+      }
+      .lead-card strong { display: block; margin-bottom: 6px; }
+      label { display: block; margin-bottom: 8px; font-weight: bold; }
+      textarea, select, input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+      .status-pill {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: bold;
+        background: #e9fdf6;
+        color: #0d7b5f;
+      }
+      @media (max-width: 640px) {
+        .container { padding: 12px; }
+        .hero h1 { font-size: 1.8rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>

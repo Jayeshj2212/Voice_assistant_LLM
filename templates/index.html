@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}AI Telecaller Dashboard{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>AI Telecaller</h1>
+  <p>Open-source multilingual outreach engine for sales, retention, and support campaigns.</p>
+</div>
+
+<div class="metrics">
+  <div class="metric-box">
+    <strong>{{ pipeline.total_leads }}</strong>
+    Lead Pipeline
+  </div>
+  <div class="metric-box">
+    <strong>{{ pipeline.qualified }}</strong>
+    Qualified Leads
+  </div>
+  <div class="metric-box">
+    <strong>{{ pipeline.calls_done }}</strong>
+    Calls Made
+  </div>
+  <div class="metric-box">
+    <strong>{{ pipeline.converted }}</strong>
+    Conversion
+  </div>
+  <div class="metric-box">
+    <strong>₹{{ pipeline.cost_per_lead }}</strong>
+    Cost/Lead
+  </div>
+  <div class="metric-box">
+    <strong>{{ pipeline.answer_rate }}%</strong>
+    Answer Rate
+  </div>
+</div>
+
+<div class="card">
+  <h2>Multilingual Campaigns</h2>
+  <div class="grid">
+    {% for code, meta in languages.items() %}
+    <div class="lang-box">
+      <h3>{{ meta.label }}</h3>
+      <p>{{ meta.greeting }}</p>
+      <a class="btn" href="/call?language={{ code }}&campaign=sales">Launch {{ meta.label }} call</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Lead Desk Preview</h2>
+  <div class="grid">
+    {% for lead in leads %}
+    <div class="lead-card">
+      <strong>{{ lead.name }}</strong>
+      <div>{{ lead.phone }}</div>
+      <div>{{ lead.city }}</div>
+      <div>{{ lead.interest }}</div>
+      <div class="status-pill" style="margin-top: 10px;">{{ lead.status|upper }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

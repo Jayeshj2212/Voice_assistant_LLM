@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+recordings/
+live_demo/*.wav
+*.deb
+.env
+.env.*
+!.env.example
+*.py[cod]

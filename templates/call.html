@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}{{ language_name }} Telecaller{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <div>
+      <h1>{{ language_label }} AI Telecaller</h1>
+      <p><strong>Campaign:</strong> {{ campaign }}</p>
+    </div>
+    <a class="btn secondary" href="/">Back to dashboard</a>
+  </div>
+
+  <div class="grid" style="margin-top: 20px;">
+    <div class="lead-card">
+      <strong>Lead Profile</strong>
+      <div><b>Name:</b> {{ lead_name }}</div>
+      <div><b>Phone:</b> {{ lead_phone }}</div>
+      <div><b>Location:</b> {{ lead_city }}</div>
+      <div><b>Language:</b> {{ language_name }}</div>
+    </div>
+
+    <div class="lead-card">
+      <strong>Live Status</strong>
+      <div class="status-pill" style="margin-bottom: 10px;">ACTIVE CALL</div>
+      <div>Response Confidence: 89%</div>
+      <div>Intent Detected: Interested</div>
+      <div>Recommended next action: callback</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px; padding: 18px; background: #f4f9ff; border: 1px solid var(--line); border-radius: 14px;">
+    <h3>Opening Script</h3>
+    <p>{{ greeting }}</p>
+    <p>{{ prompt }}</p>
+  </div>
+
+  <form id="call-form" style="margin-top: 20px;">
+    <label for="lead_name">Lead Name</label>
+    <input id="lead_name" value="{{ lead_name }}" />
+
+    <label for="customer_input">Lead context / objections</label>
+    <textarea id="customer_input" rows="4" placeholder="Example: Lead wants a discount and asks for a callback today.">Lead wants product details and asks for a callback today.</textarea>
+
+    <label for="ref_audio_path">Custom F5 reference audio path (optional)</label>
+    <input id="ref_audio_path" value="/home/jayesh/voice_agent/.venv/lib/python3.11/site-packages/f5_tts/infer/examples/basic/basic_ref_en.wav" placeholder="/path/to/hindi_reference.wav" />
+
+    <label for="ref_text">Custom reference text (optional)</label>
+    <input id="ref_text" value="Some call me nature, others call me mother nature." placeholder="Example: Namaste, I am your AI telecaller." />
+
+    <button class="btn" type="submit">Generate AI follow-up</button>
+  </form>
+
+  <div style="margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap;">
+    <button class="btn" type="button" id="start-live-call">Start live call</button>
+    <button class="btn" type="button" id="record-turn">Record customer response</button>
+    <button class="btn secondary" type="button" id="stop-live-call">Stop</button>
+  </div>
+
+  <div id="reply-box" style="margin-top: 20px; padding: 18px; border-radius: 14px; background: #edfdf7; display: none; border: 1px solid #cfefe0;">
+    <strong>Generated response</strong>
+    <p id="reply-text" style="margin-bottom: 0;"></p>
+  </div>
+
+  <div id="live-call-box" style="margin-top: 24px; display: none; border: 1px solid var(--line); border-radius: 14px; background: #f6f8ff; padding: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+      <strong>Live telephony flow</strong>
+      <span id="call-timer" class="status-pill">Ready</span>
+    </div>
+    <div id="live-call-log" style="display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow: auto;"></div>
+  </div>
+
+  <div id="finalize-box" style="margin-top: 20px; display: none; padding: 18px; background: #fff8ef; border: 1px solid #f3d4a3; border-radius: 14px;">
+    <h3>Call disposition</h3>
+    <label for="disposition">Outcome</label>
+    <select id="disposition">
+      <option value="interested">Interested</option>
+      <option value="follow_up_needed">Follow-up needed</option>
+      <option value="not_interested">Not interested</option>
+      <option value="callback_requested">Callback requested</option>
+    </select>
+
+    <label for="follow_up">Follow-up time</label>
+    <input id="follow_up" value="Tomorrow 3 PM" />
+
+    <button class="btn" type="button" id="finalize-call">Finalize call & save CRM</button>
+    <div id="summary-box" style="margin-top: 12px; display: none; padding: 12px; background: #fff; border-radius: 10px; border: 1px solid #efd9b6;"></div>
+  </div>
+
+  <h3 style="margin-top: 26px;">Agent stack</h3>
+  <ul>
+    <li>Speech-to-text: Whisper / Vosk</li>
+    <li>LLM: open-source local model via Ollama</li>
+    <li>Text-to-speech: Piper / Coqui / Kokoro</li>
+    <li>Dialer integration: Twilio / Plivo / SIP gateway</li>
+    <li>CRM sync: lead state, notes, follow-up timestamps</li>
+  </ul>
+</div>
+
+<script>
+  const form = document.getElementById('call-form');
+  const replyBox = document.getElementById('reply-box');
+  const replyText = document.getElementById('reply-text');
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const payload = {
+      language: '{{ language_name.lower() }}',
+      campaign: '{{ campaign }}',
+      lead_name: document.getElementById('lead_name').value || 'Amit',
+      customer_input: document.getElementById('customer_input').value,
+      ref_audio: document.getElementById('ref_audio_path').value || undefined,
+      ref_text: document.getElementById('ref_text').value || undefined
+    };
+
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    replyText.textContent = data.reply || 'No reply generated.';
+    replyBox.style.display = 'block';
+  });
+
+  const liveCallBox = document.getElementById('live-call-box');
+  const liveCallLog = document.getElementById('live-call-log');
+  const callTimer = document.getElementById('call-timer');
+  const startLiveCallButton = document.getElementById('start-live-call');
+  const stopLiveCallButton = document.getElementById('stop-live-call');
+  const recordTurnButton = document.getElementById('record-turn');
+  const finalizeCallButton = document.getElementById('finalize-call');
+  const finalizeBox = document.getElementById('finalize-box');
+  const summaryBox = document.getElementById('summary-box');
+
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let audioStream = null;
+  let callTranscript = [];
+
+  function addCallLog(label, text, tone = 'agent') {
+    const item = document.createElement('div');
+    item.style.padding = '10px 12px';
+    item.style.borderRadius = '10px';
+    item.style.background = tone === 'agent' ? '#eaf7ff' : '#eefcf4';
+    item.style.border = '1px solid rgba(0,0,0,0.05)';
+    item.innerHTML = `<strong>${label}:</strong> ${text}`;
+    liveCallLog.appendChild(item);
+    liveCallLog.scrollTop = liveCallLog.scrollHeight;
+  }
+
+  function showLiveCall() {
+    liveCallBox.style.display = 'block';
+    finalizeBox.style.display = 'block';
+    callTimer.textContent = 'Live call active';
+  }
+
+  startLiveCallButton.addEventListener('click', async function () {
+    showLiveCall();
+    callTranscript = [];
+    liveCallLog.innerHTML = '';
+
+    const greetingMap = {
+      hi: 'नमस्कार! मैं आपका AI टेलीकॉलर हूँ। मैं आपकी ज़रूरत को समझकर सही विकल्प और अगला कदम बताऊँगा।',
+      english: 'Hello! I am your AI telecaller. I am here to understand your requirement and guide you with the best option.',
+      bn: 'নমস্কার! আমি আপনার AI টেলিকॉलर। আমি আপনার প্রয়োজন বুঝে সেরা বিকল্প ও পরবর্তী পদক্ষেপ জানাব।'
+    };
+    const greeting = greetingMap['{{ language_name.lower() }}'] || greetingMap.hi;
+
+    addCallLog('Agent', greeting);
+    addCallLog('Agent', 'Please allow microphone access in your browser so I can listen to your voice and respond naturally.');
+  });
+
+  async function sendVoiceTurn(blob) {
+    const formData = new FormData();
+    formData.append('audio', blob, 'customer_response.wav');
+    formData.append('language', '{{ language_name.lower() }}');
+    formData.append('campaign', '{{ campaign }}');
+    formData.append('lead_name', document.getElementById('lead_name').value || 'Amit');
+    formData.append('ref_audio', document.getElementById('ref_audio_path').value || '');
+    formData.append('ref_text', document.getElementById('ref_text').value || '');
+
+    const response = await fetch('/api/live-call/turn', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    const transcript = data.transcript || 'Customer response captured.';
+    const reply = data.reply || 'Thank you for your time, I will share the next step.';
+
+    callTranscript.push(transcript);
+    addCallLog('Customer', transcript, 'lead');
+    addCallLog('Agent', reply, 'agent');
+    replyText.textContent = reply;
+    replyBox.style.display = 'block';
+
+    if (data.audio_url) {
+      const audio = new Audio(data.audio_url);
+      audio.play().catch(() => {});
+    }
+  }
+
+  recordTurnButton.addEventListener('click', async function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      addCallLog('System', 'This browser does not support microphone input. Use a desktop browser with mic permissions enabled.', 'agent');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordedChunks = [];
+      mediaRecorder = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordedChunks.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        if (blob.size > 0) {
+          await sendVoiceTurn(blob);
+        }
+        stream.getTracks().forEach((track) => track.stop());
+        mediaRecorder = null;
+      };
+
+      recorder.start();
+      addCallLog('System', 'Microphone is live. Please speak naturally now.', 'agent');
+      callTimer.textContent = 'Listening';
+
+      setTimeout(() => {
+        if (mediaRecorder && recorder.state !== 'inactive') {
+          recorder.stop();
+          callTimer.textContent = 'Processing';
+        }
+      }, 5000);
+    } catch (error) {
+      addCallLog('System', 'Mic permission was blocked. Click Allow when the browser asks for microphone access.', 'agent');
+    }
+  });
+
+  stopLiveCallButton.addEventListener('click', function () {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    liveCallBox.style.display = 'none';
+    finalizeBox.style.display = 'block';
+    callTimer.textContent = 'Stopped';
+  });
+
+  finalizeCallButton.addEventListener('click', async function () {
+    const response = await fetch('/api/live-call/finalize', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        lead_id: 'demo-001',
+        lead_name: document.getElementById('lead_name').value || 'Amit',
+        disposition: document.getElementById('disposition').value,
+        follow_up: document.getElementById('follow_up').value,
+        transcript: callTranscript.join(' ') || 'Customer interacted with AI telecaller and expressed interest.'
+      })
+    });
+    const data = await response.json();
+    summaryBox.innerHTML = `<strong>Summary:</strong><br>${(data.summary || 'Call finalized successfully.').replace(/\n/g, '<br>')}`;
+    summaryBox.style.display = 'block';
+    addCallLog('CRM', 'Call disposition saved and follow-up scheduled.', 'agent');
+  });
+</script>
+{% endblock %}
